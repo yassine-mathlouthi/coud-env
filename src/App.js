@@ -85,7 +85,7 @@ function App() {
         </div>
       </nav>
 
-      <div className="app-content">App test
+      <div className="app-content">App 
         <h1 className="app-title">Cloud User App</h1>
 
         <form onSubmit={addUser} className="user-form">
