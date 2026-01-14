@@ -3,7 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 # Database URL
-DATABASE_URL = "mysql+mysqlconnector://root:@localhost/cloud_app"
+DATABASE_URL = "mysql+mysqlconnector://admin:YourPassword@fastapi-db.cxdhoyygvtrd.us-east-1.rds.amazonaws.com:3306/fastapi_db"
 
 # Engine
 engine = create_engine(DATABASE_URL, echo=True)
