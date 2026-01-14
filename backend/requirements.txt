@@ -1,4 +1,6 @@
 fastapi
 uvicorn[standard]
 sqlalchemy
-mysql
+databases[sqlite]
+pydantic
+mysql-connector-python
