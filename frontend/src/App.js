@@ -9,6 +9,7 @@ function App() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [editingId, setEditingId] = useState(null);
 
   const loadUsers = useCallback(async () => {
     try {
@@ -47,25 +48,68 @@ function App() {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`${API_BASE_URL}/users`, {
-        method: "POST",
+      const url = editingId 
+        ? `${API_BASE_URL}/users/${editingId}`
+        : `${API_BASE_URL}/users`;
+      
+      const method = editingId ? "PUT" : "POST";
+      
+      const response = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: name.trim(), email: email.trim() })
       });
 
       if (!response.ok) {
-        throw new Error("Failed to add user");
+        throw new Error(editingId ? "Failed to update user" : "Failed to add user");
       }
 
       setName("");
       setEmail("");
+      setEditingId(null);
       await loadUsers();
     } catch (err) {
       setError(err.message);
-      console.error("Error adding user:", err);
+      console.error("Error saving user:", err);
     } finally {
       setLoading(false);
     }
+  };
+
+  const deleteUser = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this user?")) {
+      return;
+    }
+
+    try {
+      setError(null);
+      const response = await fetch(`${API_BASE_URL}/users/${id}`, {
+        method: "DELETE"
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete user");
+      }
+
+      await loadUsers();
+    } catch (err) {
+      setError(err.message);
+      console.error("Error deleting user:", err);
+    }
+  };
+
+  const startEdit = (user) => {
+    setEditingId(user.id);
+    setName(user.name);
+    setEmail(user.email);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setName("");
+    setEmail("");
+    setError(null);
   };
 
   useEffect(() => {
@@ -85,8 +129,8 @@ function App() {
         </div>
       </nav>
 
-      <div className="app-content">App 
-        <h1 className="app-title">Cloud User App</h1>
+      <div className="app-content">
+        <h1 className="app-title">{editingId ? "Edit User" : "Cloud User App"}</h1>
 
         <form onSubmit={addUser} className="user-form">
           <div className="form-group">
@@ -113,13 +157,25 @@ function App() {
             />
           </div>
 
-          <button 
-            type="submit" 
-            disabled={loading}
-            className="btn-primary"
-          >
-            {loading ? "Adding..." : "Add User"}
-          </button>
+          <div className="form-actions">
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="btn-primary"
+            >
+              {loading ? (editingId ? "Updating..." : "Adding...") : (editingId ? "Update User" : "Add User")}
+            </button>
+            {editingId && (
+              <button 
+                type="button" 
+                onClick={cancelEdit}
+                disabled={loading}
+                className="btn-secondary"
+              >
+                Cancel
+              </button>
+            )}
+          </div>
         </form>
 
         {error && (
@@ -139,8 +195,26 @@ function App() {
             <ul className="users-list">
               {users.map((user) => (
                 <li key={user.id} className="user-item">
-                  <span className="user-name">{user.name}</span>
-                  <span className="user-email">{user.email}</span>
+                  <div className="user-info">
+                    <span className="user-name">{user.name}</span>
+                    <span className="user-email">{user.email}</span>
+                  </div>
+                  <div className="user-actions">
+                    <button 
+                      onClick={() => startEdit(user)}
+                      className="btn-edit"
+                      title="Edit user"
+                    >
+                      ✏️ Edit
+                    </button>
+                    <button 
+                      onClick={() => deleteUser(user.id)}
+                      className="btn-delete"
+                      title="Delete user"
+                    >
+                      🗑️ Delete
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>
