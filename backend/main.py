@@ -13,7 +13,9 @@ app = FastAPI()
 
 # CORS setup
 origins = [
-    "http://107.23.136.161:3000",  # React frontend
+    "http://98.91.199.191:8000"
+    ,
+    "http://107.23.136.161:3000"  # React frontend
 ]
 
 app.add_middleware(
