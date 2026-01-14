@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import "./App.css";
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://127.0.0.1:8000";
+const API_BASE_URL = process.env.REACT_APP_API_URL || "http://98.91.199.191:8000";
 
 function App() {
   const [users, setUsers] = useState([]);
