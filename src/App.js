@@ -1,58 +1,163 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import "./App.css";
 
-const API = "http://localhost:8000";
+const API_BASE_URL = process.env.REACT_APP_API_URL || "http://127.0.0.1:8000";
 
 function App() {
   const [users, setUsers] = useState([]);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const loadUsers = () => {
-    fetch(API + "/users")
-      .then(res => res.json())
-      .then(data => setUsers(data));
-  };
+  const loadUsers = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await fetch(`${API_BASE_URL}/users`);
+      
+      if (!response.ok) {
+        throw new Error("Failed to fetch users");
+      }
+      
+      const data = await response.json();
+      setUsers(data);
+    } catch (err) {
+      setError(err.message);
+      console.error("Error loading users:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const addUser = () => {
-    fetch(API + "/users", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email })
-    }).then(() => {
+  const addUser = async (e) => {
+    e.preventDefault();
+    
+    if (!name.trim() || !email.trim()) {
+      setError("Please fill in all fields");
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError("Please enter a valid email");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await fetch(`${API_BASE_URL}/users`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name.trim(), email: email.trim() })
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to add user");
+      }
+
       setName("");
       setEmail("");
-      loadUsers();
-    });
+      await loadUsers();
+    } catch (err) {
+      setError(err.message);
+      console.error("Error adding user:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
     loadUsers();
-  }, []);
+  }, [loadUsers]);
 
   return (
-    <div style={{ padding: "30px" }}>
-      <h2>Cloud User App</h2>
+    <div className="app-container">
+      <nav className="navbar">
+        <div className="navbar-content">
+          <h1 className="navbar-logo">CloudApp</h1>
+          <ul className="navbar-menu">
+            <li><a href="#home">Home</a></li>
+            <li><a href="#users">Users</a></li>
+            <li><a href="#about">About</a></li>
+          </ul>
+        </div>
+      </nav>
 
-      <input
-        placeholder="Name"
-        value={name}
-        onChange={e => setName(e.target.value)}
-      />
+      <div className="app-content">App
+        <h1 className="app-title">Cloud User App</h1>
 
-      <input
-        placeholder="Email"
-        value={email}
-        onChange={e => setEmail(e.target.value)}
-      />
+        <form onSubmit={addUser} className="user-form">
+          <div className="form-group">
+            <input
+              type="text"
+              placeholder="Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              disabled={loading}
+              className="form-input"
+              aria-label="User name"
+            />
+          </div>
 
-      <button onClick={addUser}>Add</button>
+          <div className="form-group">
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={loading}
+              className="form-input"
+              aria-label="User email"
+            />
+          </div>
 
-      <h3>Users</h3>
-      <ul>
-        {users.map(u => (
-          <li key={u.id}>{u.name} - {u.email}</li>
-        ))}
-      </ul>
+          <button 
+            type="submit" 
+            disabled={loading}
+            className="btn-primary"
+          >
+            {loading ? "Adding..." : "Add User"}
+          </button>
+        </form>
+
+        {error && (
+          <div className="error-message" role="alert">
+            {error}
+          </div>
+        )}
+
+        <section className="users-section">
+          <h2 className="section-title">Users</h2>
+          
+          {loading && users.length === 0 ? (
+            <p className="loading-text">Loading users...</p>
+          ) : users.length === 0 ? (
+            <p className="empty-text">No users yet. Add one above!</p>
+          ) : (
+            <ul className="users-list">
+              {users.map((user) => (
+                <li key={user.id} className="user-item">
+                  <span className="user-name">{user.name}</span>
+                  <span className="user-email">{user.email}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </div>
+
+      <footer className="footer">
+        <div className="footer-content">
+          <p>&copy; {new Date().getFullYear()} CloudApp. All rights reserved.</p>
+          <div className="footer-links">
+            <a href="#privacy">Privacy Policy</a>
+            <a href="#terms">Terms of Service</a>
+            <a href="#contact">Contact</a>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
